@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 
 export default function Home() {
-  const [todos, setTodos] = useState<string[]>([]);
+  const [todos, setTodos] = useState<Array<{ text: string; checked: boolean }>>([]);
 
   const handleDeleteTodo = (index: number) => {
     setTodoToDelete(index);
@@ -39,10 +39,31 @@ export default function Home() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("todos");
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        // Handle migration from old format (string array) to new format (object array)
+        if (parsedData.length > 0 && typeof parsedData[0] === 'string') {
+          setTodos(parsedData.map((text: string) => ({ text, checked: false })));
+        } else {
+          setTodos(parsedData);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("todos", JSON.stringify(todos));
+    }
+  }, [todos]);
+
   const handleOpenDialog = (index?: number) => {
     if (index !== undefined) {
       setEditingIndex(index);
-      setCurrentTodo(todos[index]);
+      setCurrentTodo(todos[index].text);
     } else {
       setEditingIndex(null);
       setCurrentTodo("");
@@ -50,14 +71,23 @@ export default function Home() {
     setOpenDialog(true);
   };
 
+  const handleToggleCheck = (index: number) => {
+    setTodos(todos.map((todo, i) => 
+      i === index ? { ...todo, checked: !todo.checked } : todo
+    ));
+  };
+
   const handleSaveTodo = () => {
     if (currentTodo.trim()) {
       if (editingIndex !== null) {
         const updatedTodos = [...todos];
-        updatedTodos[editingIndex] = currentTodo;
+        updatedTodos[editingIndex] = {
+          text: currentTodo.trim(),
+          checked: updatedTodos[editingIndex].checked // Preserve existing checked state
+        };
         setTodos(updatedTodos);
       } else {
-        setTodos([...todos, currentTodo]);
+        setTodos([...todos, { text: currentTodo.trim(), checked: false }]);
       }
       setOpenDialog(false);
     }
@@ -128,9 +158,13 @@ export default function Home() {
             >
               <ListItemButton>
                 <ListItemIcon>
-                  <Checkbox edge="start" />
+                  <Checkbox 
+                    edge="start" 
+                    checked={todo.checked}
+                    onChange={() => handleToggleCheck(index)}
+                  />
                 </ListItemIcon>
-                <ListItemText primary={todo} />
+                <ListItemText primary={todo.text} />
               </ListItemButton>
             </ListItem>
           ))}
