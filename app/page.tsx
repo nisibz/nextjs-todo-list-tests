@@ -9,6 +9,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -17,9 +18,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function Home() {
-  const [todos, setTodos] = useState<Array<{ text: string; checked: boolean }>>([]);
+  const [todos, setTodos] = useState<Array<{ text: string; checked: boolean }>>(
+    [],
+  );
 
   const handleDeleteTodo = (index: number) => {
     setTodoToDelete(index);
@@ -45,8 +51,10 @@ export default function Home() {
       if (saved) {
         const parsedData = JSON.parse(saved);
         // Handle migration from old format (string array) to new format (object array)
-        if (parsedData.length > 0 && typeof parsedData[0] === 'string') {
-          setTodos(parsedData.map((text: string) => ({ text, checked: false })));
+        if (parsedData.length > 0 && typeof parsedData[0] === "string") {
+          setTodos(
+            parsedData.map((text: string) => ({ text, checked: false })),
+          );
         } else {
           setTodos(parsedData);
         }
@@ -72,9 +80,11 @@ export default function Home() {
   };
 
   const handleToggleCheck = (index: number) => {
-    setTodos(todos.map((todo, i) => 
-      i === index ? { ...todo, checked: !todo.checked } : todo
-    ));
+    setTodos(
+      todos.map((todo, i) =>
+        i === index ? { ...todo, checked: !todo.checked } : todo,
+      ),
+    );
   };
 
   const handleSaveTodo = () => {
@@ -83,7 +93,7 @@ export default function Home() {
         const updatedTodos = [...todos];
         updatedTodos[editingIndex] = {
           text: currentTodo.trim(),
-          checked: updatedTodos[editingIndex].checked // Preserve existing checked state
+          checked: updatedTodos[editingIndex].checked, // Preserve existing checked state
         };
         setTodos(updatedTodos);
       } else {
@@ -96,30 +106,65 @@ export default function Home() {
   return (
     <Container maxWidth="sm">
       <Dialog
+        fullWidth
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Confirm Delete</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ m: 0, p: 2 }} id="alert-dialog-title">
+          Confirm Delete
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={() => setOpenDialog(false)}
+          sx={(theme) => ({
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
           <Typography>Are you sure you want to delete this todo?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" autoFocus>
+          <Button variant="outlined" onClick={() => setConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={confirmDelete}
+            color="error"
+            autoFocus
+          >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>
+      <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
           {editingIndex !== null ? "Edit Todo" : "Add New Todo"}
         </DialogTitle>
-        <DialogContent>
+        <IconButton
+          aria-label="close"
+          onClick={() => setOpenDialog(false)}
+          sx={(theme) => ({
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
           <TextField
             autoFocus
             margin="dense"
+            label="Name"
             fullWidth
             variant="standard"
             value={currentTodo}
@@ -127,8 +172,16 @@ export default function Home() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSaveTodo}>Save</Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setOpenDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="contained" color="success" onClick={handleSaveTodo}>
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
       <Box sx={{ my: 4 }}>
@@ -146,20 +199,36 @@ export default function Home() {
           {todos.map((todo, index) => (
             <ListItem
               key={index}
+              sx={{
+                my: 2,
+                borderRadius: "8px",
+                backgroundColor: "#f0f0f0",
+              }}
               secondaryAction={
                 <>
-                  <Button onClick={() => handleOpenDialog(index)}>Edit</Button>
-                  <Button color="error" onClick={() => handleDeleteTodo(index)}>
-                    Delete
-                  </Button>
+                  <IconButton
+                    onClick={() => handleOpenDialog(index)}
+                    aria-label="Edit"
+                    color="warning"
+                    sx={{ mr: 1 }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteTodo(index)}
+                    aria-label="Delete"
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </>
               }
               disablePadding
             >
               <ListItemButton>
                 <ListItemIcon>
-                  <Checkbox 
-                    edge="start" 
+                  <Checkbox
+                    edge="start"
                     checked={todo.checked}
                     onChange={() => handleToggleCheck(index)}
                   />
