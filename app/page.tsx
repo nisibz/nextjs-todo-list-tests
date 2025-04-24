@@ -97,7 +97,7 @@ export default function Home() {
         };
         setTodos(updatedTodos);
       } else {
-        setTodos([...todos, { text: currentTodo.trim(), checked: false }]);
+        setTodos([{ text: currentTodo.trim(), checked: false }, ...todos]);
       }
       setOpenDialog(false);
     }
@@ -211,6 +211,7 @@ export default function Home() {
                     aria-label="Edit"
                     color="warning"
                     sx={{ mr: 1 }}
+                    disabled={todo.checked}
                   >
                     <EditIcon />
                   </IconButton>
@@ -231,9 +232,16 @@ export default function Home() {
                     edge="start"
                     checked={todo.checked}
                     onChange={() => handleToggleCheck(index)}
+                    color="success"
                   />
                 </ListItemIcon>
-                <ListItemText primary={todo.text} />
+                <ListItemText 
+                  primary={todo.text}
+                  sx={{ 
+                    textDecoration: todo.checked ? 'line-through' : 'none',
+                    color: todo.checked ? 'text.disabled' : 'inherit'
+                  }}
+                />
               </ListItemButton>
             </ListItem>
           ))}
