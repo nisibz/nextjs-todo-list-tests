@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Divider,
   List,
   ListItem,
   ListItemButton,
@@ -112,22 +113,22 @@ export default function Home() {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle sx={{ m: 0, p: 2 }} id="alert-dialog-title">
+        <DialogTitle id="alert-dialog-title">
           Confirm Delete
+          <IconButton
+            aria-label="close"
+            onClick={() => setConfirmOpen(false)}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <IconButton
-          aria-label="close"
-          onClick={() => setOpenDialog(false)}
-          sx={(theme) => ({
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: theme.palette.grey[500],
-          })}
-        >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent dividers>
+        <DialogContent>
           <Typography>Are you sure you want to delete this todo?</Typography>
         </DialogContent>
         <DialogActions>
@@ -145,38 +146,34 @@ export default function Home() {
         </DialogActions>
       </Dialog>
       <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+        <DialogTitle id="customized-dialog-title">
           {editingIndex !== null ? "Edit Todo" : "Add New Todo"}
+          <IconButton
+            aria-label="close"
+            onClick={() => setOpenDialog(false)}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <IconButton
-          aria-label="close"
-          onClick={() => setOpenDialog(false)}
-          sx={(theme) => ({
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: theme.palette.grey[500],
-          })}
-        >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent dividers>
+        <DialogContent>
           <TextField
             autoFocus
             margin="dense"
             label="Name"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={currentTodo}
             onChange={(e) => setCurrentTodo(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={() => setOpenDialog(false)}
-          >
+          <Button variant="outlined" onClick={() => setOpenDialog(false)}>
             Cancel
           </Button>
           <Button variant="contained" color="success" onClick={handleSaveTodo}>
@@ -184,68 +181,106 @@ export default function Home() {
           </Button>
         </DialogActions>
       </Dialog>
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Todo List
-        </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          maxHeight: "100vh",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "16px",
+          }}
+        >
+          <Typography variant="h4" component="h1" gutterBottom>
+            Todo List
+          </Typography>
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              justifyContent: { xs: "center", sm: "flex-end" },
+              mb: 2,
+            }}
+          >
+            <Button variant="contained" onClick={() => handleOpenDialog()}>
+              Add Todo
+            </Button>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            overflowY: "auto",
+            flex: 1,
+          }}
+        >
+          <List>
+            {todos.map((todo, index) => (
+              <React.Fragment key={index}>
+                <ListItem
+                  secondaryAction={
+                    <>
+                      <IconButton
+                        onClick={() => handleOpenDialog(index)}
+                        aria-label="Edit"
+                        color="warning"
+                        sx={{ mr: 1 }}
+                        disabled={todo.checked}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDeleteTodo(index)}
+                        aria-label="Delete"
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </>
+                  }
+                  disablePadding
+                  sx={{ py: 1.5 }}
+                >
+                  <ListItemButton
+                    sx={{ borderRadius: (theme) => theme.shape.borderRadius }}
+                  >
+                    <ListItemIcon>
+                      <Checkbox
+                        edge="start"
+                        checked={todo.checked}
+                        onChange={() => handleToggleCheck(index)}
+                        color="success"
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={todo.text}
+                      sx={{
+                        textDecoration: todo.checked ? "line-through" : "none",
+                        color: todo.checked ? "text.disabled" : "inherit",
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                {index < todos.length - 1 && <Divider component="li" />}
+              </React.Fragment>
+            ))}
+          </List>
+        </Box>
+        <Box
+          sx={{
+            p: 4,
+            display: { xs: "flex", sm: "none" },
+            justifyContent: "flex-end",
+          }}
+        >
           <Button variant="contained" onClick={() => handleOpenDialog()}>
             Add Todo
           </Button>
         </Box>
-
-        <List>
-          {todos.map((todo, index) => (
-            <ListItem
-              key={index}
-              sx={{
-                my: 2,
-                borderRadius: "8px",
-                backgroundColor: "#f0f0f0",
-              }}
-              secondaryAction={
-                <>
-                  <IconButton
-                    onClick={() => handleOpenDialog(index)}
-                    aria-label="Edit"
-                    color="warning"
-                    sx={{ mr: 1 }}
-                    disabled={todo.checked}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleDeleteTodo(index)}
-                    aria-label="Delete"
-                    color="error"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              }
-              disablePadding
-            >
-              <ListItemButton>
-                <ListItemIcon>
-                  <Checkbox
-                    edge="start"
-                    checked={todo.checked}
-                    onChange={() => handleToggleCheck(index)}
-                    color="success"
-                  />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={todo.text}
-                  sx={{ 
-                    textDecoration: todo.checked ? 'line-through' : 'none',
-                    color: todo.checked ? 'text.disabled' : 'inherit'
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
       </Box>
     </Container>
   );
