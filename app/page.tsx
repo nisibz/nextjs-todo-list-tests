@@ -11,14 +11,12 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Divider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   TextField,
   Typography,
+  Card,
+  CardContent,
+  CardActions,
+  Divider,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
@@ -112,7 +110,6 @@ export default function Home() {
     const loadTodos = async () => {
       try {
         const savedTodos = await getTodos();
-        console.log(savedTodos);
         setTodos(savedTodos);
       } catch (error) {
         console.error("Error loading todos:", error);
@@ -298,59 +295,73 @@ export default function Home() {
           sx={{
             overflowY: "auto",
             flex: 1,
+            gap: 1,
+            display: "flex",
+            flexDirection: "column",
+            marginY: 4,
           }}
         >
-          <List>
-            {todos.map((todo, index) => (
-              <React.Fragment key={index}>
-                <ListItem
-                  secondaryAction={
-                    <>
-                      <IconButton
-                        onClick={() => handleOpenDialog(todo.id)}
-                        aria-label="Edit"
-                        color="warning"
-                        sx={{ mr: 1 }}
-                        disabled={todo.checked}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDeleteTodo(todo.id)}
-                        aria-label="Delete"
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </>
-                  }
-                  disablePadding
-                  sx={{ py: 1.5 }}
-                >
-                  <ListItemButton
-                    sx={{ borderRadius: (theme) => theme.shape.borderRadius }}
+          {todos.map((todo, index) => (
+            <Box key={todo.id}>
+              <Card
+                variant="outlined"
+                sx={{
+                  border: "none",
+                  flexShrink: 0,
+                  minHeight: 64,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <CardContent
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      py: 1.5,
+                    }}
                   >
-                    <ListItemIcon>
-                      <Checkbox
-                        edge="start"
-                        checked={todo.checked}
-                        onChange={() => handleToggleCheck(todo.id)}
-                        color="success"
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={todo.text}
+                    <Checkbox
+                      edge="start"
+                      checked={todo.checked}
+                      onChange={() => handleToggleCheck(todo.id)}
+                      color="success"
+                    />
+                    <Typography
                       sx={{
+                        flex: 1,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
                         textDecoration: todo.checked ? "line-through" : "none",
                         color: todo.checked ? "text.disabled" : "inherit",
                       }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-                {index < todos.length - 1 && <Divider component="li" />}
-              </React.Fragment>
-            ))}
-          </List>
+                    >
+                      {todo.text}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ pr: 2 }}>
+                    <IconButton
+                      onClick={() => handleOpenDialog(todo.id)}
+                      aria-label="Edit"
+                      color="warning"
+                      sx={{ mr: 1 }}
+                      disabled={todo.checked}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteTodo(todo.id)}
+                      aria-label="Delete"
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Box>
+              </Card>
+              {index < todos.length - 1 && <Divider />}
+            </Box>
+          ))}
         </Box>
         <Box
           sx={{
