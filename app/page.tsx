@@ -23,6 +23,24 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useForm, Controller, type FieldErrors } from "react-hook-form";
+import Ajv from "ajv";
+
+const ajv = new Ajv();
+const todoSchema = {
+  type: "object",
+  properties: {
+    text: {
+      type: "string",
+      minLength: 1,
+      maxLength: 100,
+    },
+  },
+  required: ["text"],
+  additionalProperties: false,
+};
+
+const validateTodo = ajv.compile(todoSchema);
 
 export default function Home() {
   const [todos, setTodos] = useState<
@@ -45,9 +63,50 @@ export default function Home() {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [currentTodo, setCurrentTodo] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<number | null>(null);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<{ text: string }>({
+    defaultValues: {
+      text: "",
+    },
+
+    resolver: async (values) => {
+      const trimmedValues = { text: values.text.trim() };
+      const valid = validateTodo(trimmedValues);
+
+      if (valid) {
+        return {
+          values: trimmedValues,
+          errors: {} as FieldErrors<{ text: string }>,
+        };
+      }
+
+      return {
+        values: {},
+        errors: (validateTodo.errors?.reduce(
+          (acc, err) => ({
+            ...acc,
+            [err.instancePath.slice(1) || "text"]: {
+              type: "validation",
+              message: err.message,
+            },
+          }),
+          {} as FieldErrors<{ text: string }>,
+        ) || {
+          text: {
+            type: "required",
+            message: "This field is required",
+          },
+        }) as FieldErrors<{ text: string }>,
+      };
+    },
+  });
 
   useEffect(() => {
     const loadTodos = async () => {
@@ -64,20 +123,20 @@ export default function Home() {
 
   const handleOpenDialog = (id?: number) => {
     if (id !== undefined) {
-      const todo = todos.find(t => t.id === id);
+      const todo = todos.find((t) => t.id === id);
       if (todo) {
         setEditingId(id);
-        setCurrentTodo(todo.text);
+        reset({ text: todo.text });
       }
     } else {
       setEditingId(null);
-      setCurrentTodo("");
+      reset({ text: "" });
     }
     setOpenDialog(true);
   };
 
   const handleToggleCheck = async (id: number) => {
-    const todo = todos.find(t => t.id === id);
+    const todo = todos.find((t) => t.id === id);
     if (todo) {
       const updatedTodo = { ...todo, checked: !todo.checked };
       await updateTodo(updatedTodo);
@@ -86,27 +145,27 @@ export default function Home() {
     }
   };
 
-  const handleSaveTodo = async () => {
-    if (currentTodo.trim()) {
-      if (editingId !== null) {
-        const todo = todos.find(t => t.id === editingId);
-        if (todo) {
-          const updatedTodo = { ...todo, text: currentTodo.trim() };
-          await updateTodo(updatedTodo);
-        }
-      } else {
-        const newTodo = {
-          id: Date.now(),
-          text: currentTodo.trim(),
-          checked: false,
-        };
-        await addTodo(newTodo);
+  const handleSaveTodo = handleSubmit(async (data) => {
+    const processedText = data.text.trim();
+    if (editingId !== null) {
+      const todo = todos.find((t) => t.id === editingId);
+      if (todo) {
+        const updatedTodo = { ...todo, text: processedText };
+        await updateTodo(updatedTodo);
       }
-      const savedTodos = await getTodos();
-      setTodos(savedTodos);
-      setOpenDialog(false);
+    } else {
+      const newTodo = {
+        id: Date.now(),
+        text: processedText,
+        checked: false,
+      };
+      await addTodo(newTodo);
     }
-  };
+    const savedTodos = await getTodos();
+    setTodos(savedTodos);
+    setOpenDialog(false);
+    reset();
+  });
 
   return (
     <Container maxWidth="sm">
@@ -149,7 +208,18 @@ export default function Home() {
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog
+        fullWidth
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        disableEnforceFocus
+        TransitionProps={{
+          onEntered: () => {
+            const input = document.getElementById("todo-text-input");
+            input?.focus();
+          },
+        }}
+      >
         <DialogTitle id="customized-dialog-title">
           {editingId !== null ? "Edit Todo" : "Add New Todo"}
           <IconButton
@@ -166,14 +236,22 @@ export default function Home() {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Name"
-            fullWidth
-            variant="outlined"
-            value={currentTodo}
-            onChange={(e) => setCurrentTodo(e.target.value)}
+          <Controller
+            name="text"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                id="todo-text-input"
+                autoFocus
+                margin="dense"
+                label="Todo text"
+                fullWidth
+                variant="outlined"
+                error={!!errors.text}
+                helperText={errors.text?.message}
+              />
+            )}
           />
         </DialogContent>
         <DialogActions>
