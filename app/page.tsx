@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getTodos, addTodo, updateTodo, deleteTodo } from "./db";
 import {
   Box,
   Button,
@@ -24,82 +25,85 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function Home() {
-  const [todos, setTodos] = useState<Array<{ text: string; checked: boolean }>>(
-    [],
-  );
+  const [todos, setTodos] = useState<
+    Array<{ id: number; text: string; checked: boolean }>
+  >([]);
 
-  const handleDeleteTodo = (index: number) => {
-    setTodoToDelete(index);
+  const handleDeleteTodo = (id: number) => {
+    setTodoToDelete(id);
     setConfirmOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (todoToDelete !== null) {
-      setTodos(todos.filter((_, i) => i !== todoToDelete));
+      await deleteTodo(todoToDelete);
+      const savedTodos = await getTodos();
+      setTodos(savedTodos);
       setConfirmOpen(false);
     }
   };
 
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [currentTodo, setCurrentTodo] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState<number | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("todos");
-      if (saved) {
-        const parsedData = JSON.parse(saved);
-        // Handle migration from old format (string array) to new format (object array)
-        if (parsedData.length > 0 && typeof parsedData[0] === "string") {
-          setTodos(
-            parsedData.map((text: string) => ({ text, checked: false })),
-          );
-        } else {
-          setTodos(parsedData);
-        }
+    const loadTodos = async () => {
+      try {
+        const savedTodos = await getTodos();
+        console.log(savedTodos);
+        setTodos(savedTodos);
+      } catch (error) {
+        console.error("Error loading todos:", error);
       }
-    }
+    };
+    loadTodos();
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("todos", JSON.stringify(todos));
-    }
-  }, [todos]);
-
-  const handleOpenDialog = (index?: number) => {
-    if (index !== undefined) {
-      setEditingIndex(index);
-      setCurrentTodo(todos[index].text);
+  const handleOpenDialog = (id?: number) => {
+    if (id !== undefined) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        setEditingId(id);
+        setCurrentTodo(todo.text);
+      }
     } else {
-      setEditingIndex(null);
+      setEditingId(null);
       setCurrentTodo("");
     }
     setOpenDialog(true);
   };
 
-  const handleToggleCheck = (index: number) => {
-    setTodos(
-      todos.map((todo, i) =>
-        i === index ? { ...todo, checked: !todo.checked } : todo,
-      ),
-    );
+  const handleToggleCheck = async (id: number) => {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      const updatedTodo = { ...todo, checked: !todo.checked };
+      await updateTodo(updatedTodo);
+      const savedTodos = await getTodos();
+      setTodos(savedTodos);
+    }
   };
 
-  const handleSaveTodo = () => {
+  const handleSaveTodo = async () => {
     if (currentTodo.trim()) {
-      if (editingIndex !== null) {
-        const updatedTodos = [...todos];
-        updatedTodos[editingIndex] = {
-          text: currentTodo.trim(),
-          checked: updatedTodos[editingIndex].checked, // Preserve existing checked state
-        };
-        setTodos(updatedTodos);
+      if (editingId !== null) {
+        const todo = todos.find(t => t.id === editingId);
+        if (todo) {
+          const updatedTodo = { ...todo, text: currentTodo.trim() };
+          await updateTodo(updatedTodo);
+        }
       } else {
-        setTodos([{ text: currentTodo.trim(), checked: false }, ...todos]);
+        const newTodo = {
+          id: Date.now(),
+          text: currentTodo.trim(),
+          checked: false,
+        };
+        await addTodo(newTodo);
       }
+      const savedTodos = await getTodos();
+      setTodos(savedTodos);
       setOpenDialog(false);
     }
   };
@@ -147,7 +151,7 @@ export default function Home() {
       </Dialog>
       <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle id="customized-dialog-title">
-          {editingIndex !== null ? "Edit Todo" : "Add New Todo"}
+          {editingId !== null ? "Edit Todo" : "Add New Todo"}
           <IconButton
             aria-label="close"
             onClick={() => setOpenDialog(false)}
@@ -225,7 +229,7 @@ export default function Home() {
                   secondaryAction={
                     <>
                       <IconButton
-                        onClick={() => handleOpenDialog(index)}
+                        onClick={() => handleOpenDialog(todo.id)}
                         aria-label="Edit"
                         color="warning"
                         sx={{ mr: 1 }}
@@ -234,7 +238,7 @@ export default function Home() {
                         <EditIcon />
                       </IconButton>
                       <IconButton
-                        onClick={() => handleDeleteTodo(index)}
+                        onClick={() => handleDeleteTodo(todo.id)}
                         aria-label="Delete"
                         color="error"
                       >
@@ -252,7 +256,7 @@ export default function Home() {
                       <Checkbox
                         edge="start"
                         checked={todo.checked}
-                        onChange={() => handleToggleCheck(index)}
+                        onChange={() => handleToggleCheck(todo.id)}
                         color="success"
                       />
                     </ListItemIcon>
