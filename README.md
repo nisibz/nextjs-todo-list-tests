@@ -7,6 +7,17 @@ A simple Todo List application built with Next.js and Material UI components.
 - Create, read, update, and delete todo items
 - Responsive design using MUI components
 - Optimized for both development and production environments
+- Progressive Web App (PWA) support for offline usage and installation on devices
+
+## PWA Support
+
+This application is a Progressive Web App (PWA), which means it can be installed on devices and used offline. Key features include:
+
+- **Installable**: Users can add the app to their home screen for easy access.
+- **Offline Capabilities**: The app can function without an internet connection, allowing users to manage their todos anytime.
+- **Fast Loading**: The app loads quickly, even on slow networks, thanks to caching strategies.
+
+To use the PWA features, simply open the app in a supported browser and follow the prompts to install it.
 
 ## Getting Started
 
@@ -21,7 +32,7 @@ A simple Todo List application built with Next.js and Material UI components.
 Clone this repository:
 
 ```
-git clone <https://github.com/nisibz/nextjs-todo-list-tests.git>
+git clone https://github.com/nisibz/nextjs-todo-list-tests.git
 cd nextjs-todo-list-tests
 ```
 
